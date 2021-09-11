@@ -109,5 +109,4 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         env:
           LINQS_DEPLOY_TOKEN: ${{ secrets.LINQS_DEPLOY_PASSOWRD }}
-          GIT_REF: ${{ env.GITHUB_REF }}
         run: ./.ci/deploy-docs.sh
