@@ -29,7 +29,7 @@ mvn install
 Citing PSL
 ----------
 
-We hope you find PSL useful!
+We hope you find PSL useful! 
 If you have, please consider citing PSL in any related publications as
 ```
 @article{bach:jmlr17,
