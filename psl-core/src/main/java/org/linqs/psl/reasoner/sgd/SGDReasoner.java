@@ -82,6 +82,7 @@ public class SGDReasoner extends Reasoner {
     private float[] accumulatedGradientMean;
     private float[] accumulatedGradientVariance;
     private boolean coordinateStep;
+    private boolean gdStep;
     private SGDLearningSchedule learningSchedule;
     private SGDExtension sgdExtension;
 
@@ -104,6 +105,7 @@ public class SGDReasoner extends Reasoner {
         accumulatedGradientMean = null;
         accumulatedGradientVariance = null;
         coordinateStep = Options.SGD_COORDINATE_STEP.getBoolean();
+        gdStep = Options.SGD_GRADIENT_DESCENT_STEP.getBoolean();
         sgdExtension = SGDExtension.valueOf(Options.SGD_EXTENSION.getString().toUpperCase());
     }
 
@@ -136,6 +138,8 @@ public class SGDReasoner extends Reasoner {
         double lowestObjective = Double.POSITIVE_INFINITY;
         float[] lowestVariableValues = null;
         int lowestIteration = 0;
+        // Gradient throughout every iteration, used for full gradient descent.
+        float[] currGradient = null;
 
         long totalTime = 0;
         boolean breakSGD = false;
@@ -154,6 +158,15 @@ public class SGDReasoner extends Reasoner {
                 useNonConvex = true;
             }
 
+            if (gdStep){
+                // Reset gradients for next gradient descent step.
+                if (currGradient == null) {
+                    currGradient = new float[termStore.getVariableValues().length];
+                }
+                Arrays.fill(currGradient, 0.0f);
+            }
+
+
             if (iteration > 1) {
                 // Reset gradients for next round.
                 Arrays.fill(prevGradient, 0.0f);
@@ -166,7 +179,15 @@ public class SGDReasoner extends Reasoner {
                 }
 
                 termCount++;
-                meanMovement += variableUpdate(term, termStore, iteration, learningRate);
+                if (gdStep) {
+                    addTermGradient(term, currGradient, termStore.getVariableValues(), termStore.getVariableAtoms());
+                } else {
+                    meanMovement += variableUpdate(term, termStore, iteration, learningRate);
+                }
+            }
+
+            if (gdStep) {
+                meanMovement += variableUpdate(currGradient, termStore, iteration, learningRate);
             }
 
             evaluate(termStore, iteration, evaluators, trainingMap, evaluationPredicates);
@@ -420,6 +441,35 @@ public class SGDReasoner extends Reasoner {
         }
 
         return step;
+    }
+
+     /**
+     * Update the random variables by taking a step in the direction of the full negative gradient of all terms.
+     */
+     private float variableUpdate(float[] gradient, VariableTermStore<SGDObjectiveTerm, GroundAtom> termStore,
+                                  int iteration, float learningRate) {
+        float movement = 0.0f;
+        float variableStep = 0.0f;
+        float newValue = 0.0f;
+
+        GroundAtom[] variableAtoms = termStore.getVariableAtoms();
+        float[] variableValues = termStore.getVariableValues();
+
+        int size = variableValues.length;
+
+        for (int i = 0 ; i < size; i++) {
+            if (variableAtoms[i] instanceof ObservedAtom) {
+                continue;
+            }
+
+            variableStep = computeVariableStep(i, iteration, learningRate, gradient[i]);
+
+            newValue = Math.max(0.0f, Math.min(1.0f, variableValues[i] - variableStep));
+            movement += Math.abs(newValue - variableValues[i]);
+            variableValues[i] = newValue;
+        }
+
+        return movement;
     }
 
     /**

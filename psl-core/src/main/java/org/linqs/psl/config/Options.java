@@ -806,6 +806,12 @@ public class Options {
         Option.FLAG_NON_NEGATIVE
     );
 
+    public static final Option SGD_GRADIENT_DESCENT_STEP = new Option(
+        "sgd.gradientdescentstep",
+        false,
+        "Takes full gradient descent steps."
+    );
+
     public static final Option SGD_FIRST_ORDER_THRESHOLD = new Option(
         "sgd.firstorderthreshold",
         0.01f,
