@@ -42,6 +42,18 @@ public class NeuralOptions {
         "The named prediction function to grab from the Tensorflow saved model bundle."
     );
 
+    public static final Option NEURAL_TF_TENSOR_BATCH_SIZE = new Option(
+        "neural.tf.tensor.batch.size",
+        "batch_size",
+        "The name for the batch size tensor in the saved model."
+    );
+
+    public static final Option NEURAL_TF_TENSOR_BATCH_SIZE_VALUE = new Option(
+        "neural.tf.tensor.batch.size.value",
+        100,
+        "The value of the batch size parameter balancing the number of data points the neural model fits on."
+    );
+
     public static final Option NEURAL_TF_TENSOR_INPUT = new Option(
         "neural.tf.tensor.input",
         "data",

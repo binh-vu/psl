@@ -81,6 +81,8 @@ public class NeuralModel extends SupportingModel {
     private String labelsTensorName;
     private String inputTensorName;
     private String outputTensorName;
+    private String batchSizeTensorName;
+    public float batchSizeTensorValue;
 
     public NeuralModel() {
         bundle = null;
@@ -100,6 +102,8 @@ public class NeuralModel extends SupportingModel {
         predictFunction = NeuralOptions.NEURAL_TF_FUNCTION_PREDICT.getString();
         inputTensorName = NeuralOptions.NEURAL_TF_TENSOR_INPUT.getString();
         labelsTensorName = NeuralOptions.NEURAL_TF_TENSOR_LABELS.getString();
+        batchSizeTensorName = NeuralOptions.NEURAL_TF_TENSOR_BATCH_SIZE.getString();
+        batchSizeTensorValue = NeuralOptions.NEURAL_TF_TENSOR_BATCH_SIZE_VALUE.getFloat();
         outputTensorName = NeuralOptions.NEURAL_TF_TENSOR_OUTPUT.getString();
     }
 
@@ -179,8 +183,9 @@ public class NeuralModel extends SupportingModel {
         // Note that these get thrown away after the initial fit, so index mapping is not necessary.
         TFloat32 initialFeatures = TFloat32.tensorOf(Shape.of(observedLabels.size(), numFeatures()));
         TFloat32 initialLabels = TFloat32.tensorOf(Shape.of(observedLabels.size(), numLabels()));
-        int initialIndex = 0;
+        TFloat32 batchSizeTensor = TFloat32.tensorOf(Shape.of(1));
 
+        int initialIndex = 0;
         for (Map.Entry<Integer, float[]> entry : observedLabels.entrySet()) {
             int entityIndex = entry.getKey().intValue();
             float[] labels = entry.getValue();
@@ -196,9 +201,12 @@ public class NeuralModel extends SupportingModel {
             initialIndex++;
         }
 
+        batchSizeTensor.setFloat(1.0f, 0);
+
         Map<String, Tensor> inputMap = new HashMap<String, Tensor>(1);
         inputMap.put(inputTensorName, initialFeatures);
         inputMap.put(labelsTensorName, initialLabels);
+        inputMap.put(batchSizeTensorName, batchSizeTensor);
 
         float loss = -1.0f;
         float metricScore = -1.0f;
@@ -235,9 +243,13 @@ public class NeuralModel extends SupportingModel {
             }
         }
 
+        TFloat32 batchSizeTensor = TFloat32.tensorOf(Shape.of(1));
+        batchSizeTensor.setFloat(batchSizeTensorValue, 0);
+
         Map<String, Tensor> inputMap = new HashMap<String, Tensor>(1);
         inputMap.put(inputTensorName, features);
         inputMap.put(labelsTensorName, labelsTensor);
+        inputMap.put(batchSizeTensorName, batchSizeTensor);
 
         float loss = -1.0f;
         float metricScore = -1.0f;
