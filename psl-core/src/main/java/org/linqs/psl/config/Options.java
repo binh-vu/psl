@@ -541,8 +541,7 @@ public class Options {
     public static final Option MODEL_PREDICATE_INITIAL_ITERATIONS = new Option(
         "modelpredicate.initialiterations",
         100,
-        "The number of iterations for the internal model to go through for initial fitting.",
-        Option.FLAG_POSITIVE
+        "The number of iterations for the internal model to go through for initial fitting."
     );
 
     public static final Option ONLINE_HOST = new Option(
