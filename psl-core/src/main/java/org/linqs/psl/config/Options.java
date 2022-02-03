@@ -544,6 +544,12 @@ public class Options {
         "The number of iterations for the internal model to go through for initial fitting."
     );
 
+    public static final Option MODEL_PREDICATE_REGULARIZE = new Option(
+        "modelpredicate.regularize",
+        false,
+        "A boolean for a squared difference regularizer from saved weights."
+    );
+
     public static final Option ONLINE_HOST = new Option(
             "inference.onlinehostname",
             "127.0.0.1",

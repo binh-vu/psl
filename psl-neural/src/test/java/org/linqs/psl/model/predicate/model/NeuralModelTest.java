@@ -37,8 +37,8 @@ public class NeuralModelTest extends NeuralPSLTest {
 
         model.run();
 
-        assertEquals(1.0f, model.getValue(null, swapIndex, 0));
-        assertEquals(0.0f, model.getValue(null, swapIndex, 1));
+        assertEquals(0.0f, model.getValue(null, swapIndex, 0));
+        assertEquals(1.0f, model.getValue(null, swapIndex, 1));
 
         assertEquals(1.0f, model.getValue(null, sameIndex, 0));
         assertEquals(0.0f, model.getValue(null, sameIndex, 1));

@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.Shape;
+import org.tensorflow.types.TBool;
 import org.tensorflow.types.TFloat32;
 
 import java.io.IOException;
@@ -81,6 +82,8 @@ public class NeuralModel extends SupportingModel {
     private String labelsTensorName;
     private String inputTensorName;
     private String outputTensorName;
+    private String regularizeTensorName;
+    public boolean regularizeTensorValue;
 
     public NeuralModel() {
         bundle = null;
@@ -101,6 +104,8 @@ public class NeuralModel extends SupportingModel {
         inputTensorName = NeuralOptions.NEURAL_TF_TENSOR_INPUT.getString();
         labelsTensorName = NeuralOptions.NEURAL_TF_TENSOR_LABELS.getString();
         outputTensorName = NeuralOptions.NEURAL_TF_TENSOR_OUTPUT.getString();
+        regularizeTensorName = NeuralOptions.NEURAL_TF_TENSOR_REGULARIZE.getString();
+        regularizeTensorValue = Options.MODEL_PREDICATE_REGULARIZE.getBoolean();
     }
 
     @Override
@@ -179,6 +184,8 @@ public class NeuralModel extends SupportingModel {
         // Note that these get thrown away after the initial fit, so index mapping is not necessary.
         TFloat32 initialFeatures = TFloat32.tensorOf(Shape.of(observedLabels.size(), numFeatures()));
         TFloat32 initialLabels = TFloat32.tensorOf(Shape.of(observedLabels.size(), numLabels()));
+        TBool regularizeTensor = TBool.tensorOf(Shape.of(1));
+        regularizeTensor.setBoolean(regularizeTensorValue, 0);
         int initialIndex = 0;
 
         for (Map.Entry<Integer, float[]> entry : observedLabels.entrySet()) {
@@ -199,6 +206,7 @@ public class NeuralModel extends SupportingModel {
         Map<String, Tensor> inputMap = new HashMap<String, Tensor>(1);
         inputMap.put(inputTensorName, initialFeatures);
         inputMap.put(labelsTensorName, initialLabels);
+        inputMap.put(regularizeTensorName, regularizeTensor);
 
         float loss = -1.0f;
         float metricScore = -1.0f;
@@ -227,6 +235,8 @@ public class NeuralModel extends SupportingModel {
         if (labelsTensor == null) {
             labelsTensor = TFloat32.tensorOf(Shape.of(manualLabels.length, numLabels()));
         }
+        TBool regularizeTensor = TBool.tensorOf(Shape.of(1));
+        regularizeTensor.setBoolean(regularizeTensorValue, 0);
 
         // Reset all labels.
         for (int i = 0; i < manualLabels.length; i++) {
@@ -238,6 +248,7 @@ public class NeuralModel extends SupportingModel {
         Map<String, Tensor> inputMap = new HashMap<String, Tensor>(1);
         inputMap.put(inputTensorName, features);
         inputMap.put(labelsTensorName, labelsTensor);
+        inputMap.put(regularizeTensorName, regularizeTensor);
 
         float loss = -1.0f;
         float metricScore = -1.0f;

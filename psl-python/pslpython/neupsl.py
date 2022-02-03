@@ -25,6 +25,7 @@ class NeuPSLWrapper(tensorflow.Module):
     def __init__(self, model, inputSize, labelsSize):
         super(NeuPSLWrapper, self).__init__()
         self.model = model
+        self.weights_copy = []
 
         # model should be compiled.
         assert(self.model.compiled_loss is not None)
@@ -32,27 +33,40 @@ class NeuPSLWrapper(tensorflow.Module):
 
         self.dataTensorSpec = tensorflow.TensorSpec([None, inputSize], tensorflow.float32, name = 'data')
         self.labelsTensorSpec = tensorflow.TensorSpec([None, labelsSize], tensorflow.float32, name = 'labels')
+        self.regularizeTensorSpec = tensorflow.TensorSpec([1], tensorflow.bool, name = 'regularize')
 
         # Make `__call__`, `predict`, and `fit` all tensorflow.function.
         # This is done here instead of using a decorator so we can use variable sizes.
         self.__call__ = tensorflow.function(self.__call__, input_signature = [self.dataTensorSpec])
         self.predict = tensorflow.function(self.predict, input_signature = [self.dataTensorSpec])
-        self.fit = tensorflow.function(self.fit, input_signature = [self.dataTensorSpec, self.labelsTensorSpec])
+        self.fit = tensorflow.function(self.fit, input_signature = [self.dataTensorSpec, self.labelsTensorSpec,
+                                                                    self.regularizeTensorSpec])
         self.evaluate = tensorflow.function(self.evaluate, input_signature = [self.dataTensorSpec, self.labelsTensorSpec])
 
     def __call__(self, data):
         return self.model(data)
 
+    def save_current_weights(self):
+        self.weights_copy = []
+        for layer in self.model.weights:
+            self.weights_copy.append(tensorflow.identity(layer))
+
     def predict(self, data):
         return self.model(data)
 
     # Returns: [loss, metrics, ...]
-    def fit(self, data, labels):
+    def fit(self, data, labels, regularize):
         with tensorflow.GradientTape() as tape:
             output = self.model(data, training = True)
             mainLoss = tensorflow.reduce_mean(self.model.compiled_loss(labels, output))
-            # self.model.losses contains the reularization loss.
+            # self.model.losses contains the regularization loss.
             totalLoss = tensorflow.add_n([mainLoss] + self.model.losses)
+
+            if regularize:
+                totalLoss += tensorflow.reduce_sum([
+                    tensorflow.reduce_mean(tensorflow.math.squared_difference(w, w_h))
+                    for w, w_h in zip(self.weights_copy, self.model.weights)
+                ])
 
         gradients = tape.gradient(totalLoss, self.model.trainable_weights)
         self.model.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
@@ -100,7 +114,8 @@ class NeuPSLWrapper(tensorflow.Module):
             signatures = {
                 'call': self.__call__.get_concrete_function(self.dataTensorSpec),
                 'predict': self.predict.get_concrete_function(self.dataTensorSpec),
-                'fit': self.fit.get_concrete_function(self.dataTensorSpec, self.labelsTensorSpec),
+                'fit': self.fit.get_concrete_function(self.dataTensorSpec, self.labelsTensorSpec,
+                                                      self.regularizeTensorSpec),
                 'evaluate': self.evaluate.get_concrete_function(self.dataTensorSpec, self.labelsTensorSpec),
             }
 

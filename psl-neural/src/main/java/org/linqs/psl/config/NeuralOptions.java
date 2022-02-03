@@ -60,12 +60,19 @@ public class NeuralOptions {
         "The name for the output tensor in the saved model."
     );
 
+    public static final Option NEURAL_TF_TENSOR_REGULARIZE = new Option(
+        "neural.tf.tensor.regularize",
+        "regularize",
+        "The name for the regularize tensor in the saved model."
+    );
+
     static {
         Options.addOption(NEURAL_TF_BUNDLE_TAG);
         Options.addOption(NEURAL_TF_FUNCTION_FIT);
         Options.addOption(NEURAL_TF_FUNCTION_PREDICT);
         Options.addOption(NEURAL_TF_TENSOR_INPUT);
         Options.addOption(NEURAL_TF_TENSOR_OUTPUT);
+        Options.addOption(NEURAL_TF_TENSOR_REGULARIZE);
     }
 
     // Static only.

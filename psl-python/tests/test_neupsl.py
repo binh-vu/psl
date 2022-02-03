@@ -50,7 +50,7 @@ class TestNeuPSL(tests.base_test.PSLTest):
         pre_train_results = wrapper.evaluate(test_features, test_labels)
 
         for epoch in range(epochs):
-            wrapper.fit(train_features, train_labels)
+            wrapper.fit(train_features, train_labels, tensorflow.constant([False], dtype=tensorflow.bool))
 
         post_train_results = wrapper.evaluate(test_features, test_labels)
 
